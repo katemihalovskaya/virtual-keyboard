@@ -71,7 +71,22 @@
     background: rgb(0, 0, 0, 0.25);
 }
 
-.keyboard__key_down {
-    background: rgb(0, 0, 0, 0.25);
-    border-radius: 50%;
+.keyboard__key_press {
+    background-color: rgb(0, 0, 0, 0.25);
+    color: #fff;
+}
+
+.keyboard__key_up {
+    animation: keys_animation 0.6s forwards ;
+}
+
+@keyframes keys_animation {
+    0% {
+        background-color: rgb(0, 0, 0, 0.25);
+        color: rgb(105, 137, 188);
+    }
+    100% {
+        background-color: rgb(105, 137, 188);
+        color: #000;
+    }
 }
