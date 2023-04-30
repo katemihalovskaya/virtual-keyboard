@@ -8,7 +8,7 @@
 .keyboard {
     position: fixed;
     left: 0;
-    bottom: 0;
+    bottom: 20px;
     width: 100%;
     padding: 5px 0;
     background: rgb(105, 137, 188);
@@ -22,7 +22,7 @@
 .keyboard__key {
     height: 45px;
     width: 6%;
-    max-width: 60px;
+    /* max-width: 60px; */
     margin: 3px;
     border: none;
     border-radius: 4px;
@@ -34,4 +34,44 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    vertical-align: top;
+    padding: 0;
+    position: relative;
+}
+
+.keyboard__key:hover {
+    background: rgb(255, 255, 255, 0.12);
+}
+
+.keyboard__key_wide {
+    width: 10%;
+}
+
+.keyboard__key_extra-wide {
+    width: 38.5%;
+    max-width: 500px;
+}
+
+.keyboard__key_activatable::after {
+    content: '';
+    top: 10px;
+    right: 10px;
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgb(0, 0, 0, 0.2);
+}
+
+.keyboard__key_active::after {
+    background: #75c47d;
+}
+
+.keyboard__key_dark {
+    background: rgb(0, 0, 0, 0.25);
+}
+
+.keyboard__key_down {
+    background: rgb(0, 0, 0, 0.25);
+    border-radius: 50%;
 }
