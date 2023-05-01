@@ -27,15 +27,15 @@ let keys;
 let textArea;
 let shift = false;
 let capsLock = false;
-let keyPressed = {};
+const keyPressed = {};
 
 function getLanguage() {
-    let lang = localStorage.getItem('language');
-    return lang ? lang : 'en';
+  const lang = localStorage.getItem('language');
+  return lang || 'en';
 }
 
 function saveLanguage(lang) {
-    localStorage.setItem('language', lang);
+  localStorage.setItem('language', lang);
 }
 
 function toggleCapsLock(key) {
@@ -63,23 +63,26 @@ function toggleShift(lang) {
 }
 
 function toggleLanguage() {
-    lang = getLanguage() === 'en' ? 'ru' : 'en';
-    for (let i = 0; i < keys.length; i += 1) {
-        if (keys[i].childElementCount === 0) {
-          keys[i].textContent = keyLayout[lang][i];
-        }
-      }
-    saveLanguage(lang);
+  const lang = getLanguage() === 'en' ? 'ru' : 'en';
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    if (key.childElementCount === 0) {
+      const value = keyLayout[lang][i];
+      key.textContent = value;
+    }
+  }
+  saveLanguage(lang);
 }
 
 function insertTab() {
-    const start = textArea.selectionStart;
-    const end = textArea.selectionEnd;
-    textArea.value = textArea.value.substring(0, start) + "\t" + textArea.value.substring(end);
-    textArea.selectionStart = textArea.selectionEnd = start + 4;
+  const start = textArea.selectionStart;
+  const end = textArea.selectionEnd;
+  textArea.value = `${textArea.value.substring(0, start)}\t${textArea.value.substring(end)}`;
+  textArea.selectionStart = start + 4;
+  textArea.selectionEnd = start + 4;
 }
 
-function navigate(key) {
+/* function navigate(key) {
     switch(key) {
         case 'ArrowLeft':
             if (textArea.selectionStart > 0) {
@@ -91,7 +94,8 @@ function navigate(key) {
             const lineStart = textArea.value.lastIndexOf("\n", textArea.selectionStart - 1);
             if (lineStart >= 0) {
                 const lineEnd = textArea.value.indexOf("\n", textArea.selectionStart);
-                textArea.selectionStart = lineStart + (textArea.selectionStart - lineStart) % (lineEnd - lineStart);
+                textArea.selectionStart = lineStart
+                  + (textArea.selectionStart - lineStart) % (lineEnd - lineStart);
                 textArea.selectionEnd = textArea.selectionStart;
             }
             break;
@@ -105,19 +109,25 @@ function navigate(key) {
             const lineEnd = textArea.value.indexOf("\n", textArea.selectionEnd);
             if (lineEnd >= 0) {
                 const lineStart = textArea.value.lastIndexOf("\n", textArea.selectionEnd - 1);
-                textArea.selectionEnd = lineStart + (textArea.selectionEnd - lineStart) % (lineEnd - lineStart);
+                textArea.selectionEnd = lineStart
+                  + (textArea.selectionEnd - lineStart) % (lineEnd - lineStart);
                 textArea.selectionStart = textArea.selectionEnd;
             }
-            break;         
+            break;
     }
-}
+} */
 
 function insertLineBreak(lang, key) {
-    if(lang === 'en') {
-        return ['Backspace', ']', 'Enter', 'ShiftRight'].indexOf(key) !== -1;
-    } else {
-        return ['Backspace', 'Enter', 'ShiftRight', 'ъ'].indexOf(key) !== -1;
-    }
+  if (lang === 'en') {
+    return ['Backspace', ']', 'Enter', 'ShiftRight'].indexOf(key) !== -1;
+  }
+  return ['Backspace', 'Enter', 'ShiftRight', 'ъ'].indexOf(key) !== -1;
+}
+
+function animation(key) {
+  setTimeout(() => {
+    key.classList.remove('keyboard__key_up');
+  }, 200);
 }
 
 function createKeys(lang) {
@@ -129,12 +139,12 @@ function createKeys(lang) {
   // Creates HTML for an symbol
   const createSymbolHTML = (symbolName) => `<i class="material-symbols-outlined">${symbolName}</i>`;
 
-  keyLayout[lang].forEach((key) => {
+  keyLayout[lang].forEach((key, idx) => {
     const keyElement = document.createElement('button');
 
     // Add attributes/classes
     keyElement.setAttribute('type', 'button');
-    keyElement.setAttribute('keyName', key);
+    keyElement.setAttribute('keyIndex', idx);
     keyElement.classList.add('keyboard__key');
 
     switch (key) {
@@ -142,16 +152,15 @@ function createKeys(lang) {
         keyElement.classList.add('keyboard__key_wide');
         keyElement.innerHTML = createIconHTML('backspace');
         keyElement.addEventListener('click', () => {
-          const { value } = textArea;
-          textArea.value = value.substring(0, value.length - 1);
+          textArea.value = textArea.value.substring(0, textArea.value.length - 1);
         });
         break;
       case 'Tab':
         keyElement.innerHTML = createIconHTML('keyboard_tab');
         keyElement.addEventListener('click', (e) => {
-            e.preventDefault();
-            insertTab();
-          });
+          e.preventDefault();
+          insertTab();
+        });
         break;
       case 'MetaLeft':
       case 'MetaRight':
@@ -203,18 +212,15 @@ function createKeys(lang) {
         break;
       default:
         keyElement.textContent = key.toLowerCase();
-        keyElement.addEventListener('click', () => {
-            key = capsLock ? key.toUpperCase() : key.toLowerCase();
-            /* textArea.value = textArea.value.substring(0, textArea.selectionStart) + key + textArea.value.substring(textArea.selectionEnd); */
-            textArea.value += key;
+        keyElement.addEventListener('click', (e) => {
+          let value = e.currentTarget.textContent;
+          value = capsLock ? value.toUpperCase() : value.toLowerCase();
+          textArea.value += value;
         });
-        break;
     }
 
-    keyElement.addEventListener('click', () => navigate(key));
-
     keyElement.addEventListener('mousedown', () => {
-        keyElement.classList.add('keyboard__key_press');
+      keyElement.classList.add('keyboard__key_press');
     });
     keyElement.addEventListener('mouseup', () => {
       keyElement.classList.remove('keyboard__key_press');
@@ -256,77 +262,82 @@ function initTextarea() {
 }
 
 function initComments() {
-    let comments = document.createElement('div');
-    comments.classList.add('comments');
-    comments.innerHTML = `Клавиатура создана в операционной системе MacOS <br>
-                          Для переключения языка комбинация: левыe control(ctrl) + option(alt)`
-    document.body.appendChild(comments);
+  const comments = document.createElement('div');
+  comments.classList.add('comments');
+  comments.innerHTML = `Клавиатура создана в операционной системе MacOS <br>
+                          Для переключения языка комбинация: левыe control(ctrl) + option(alt)`;
+  document.body.appendChild(comments);
 }
 
 window.addEventListener('keydown', (e) => {
+  e.preventDefault();
   const currentKeyCode = e.code;
   const currentKeyName = e.key.toLowerCase();
   keyPressed[currentKeyCode] = true;
   for (let i = 0; i < keys.length; i += 1) {
-    const keyName = keys[i].getAttribute('keyname');
-    if (currentKeyCode === keyName || currentKeyName === keyName) {
-      keys[i].classList.add('keyboard__key_press');
-      switch(currentKeyCode) {
+    const key = keys[i];
+    const keyIndex = key.getAttribute('keyIndex');
+    const keyNameEn = keyLayout.en[keyIndex];
+    const keyNameRu = keyLayout.ru[keyIndex];
+    if (currentKeyCode === keyNameEn || currentKeyName === keyNameEn
+      || currentKeyName === keyNameRu) {
+      key.classList.add('keyboard__key_press');
+      switch (currentKeyCode) {
         case 'ShiftLeft':
         case 'ShiftRight':
-            toggleShift(getLanguage());
-            break;
+          toggleShift(getLanguage());
+          break;
         case 'CapsLock':
-            toggleCapsLock(keys[i]);
-            break;
+          toggleCapsLock(key);
+          break;
         case 'Enter':
-            e.preventDefault();
-            textArea.value += '\n';
-            break;
+          textArea.value += '\n';
+          break;
         case 'Space':
-            e.preventDefault();
-            textArea.value += ' ';
-            break;
+          textArea.value += ' ';
+          break;
         case 'Backspace':
-            e.preventDefault();
-            const { value } = textArea;
-            textArea.value = value.substring(0, value.length - 1);
-            break;
+          textArea.value = textArea.value.substring(0, textArea.value.length - 1);
+          break;
         case 'Tab':
-            e.preventDefault();
-            insertTab();
+          insertTab();
+          break;
+        default:
+          if (key.childElementCount === 0) {
+            let value = key.textContent;
+            value = capsLock ? value.toUpperCase() : value.toLowerCase();
+            textArea.value += value;
+          }
       }
-      if (keyPressed['ControlLeft'] && keyPressed['AltLeft']) {
+      if (keyPressed.ControlLeft && keyPressed.AltLeft) {
         toggleLanguage();
       }
-      navigate(currentKeyCode);
     }
   }
 });
 
-function animation(key) {
-  setTimeout(() => {
-    key.classList.remove('keyboard__key_up');
-  }, 200);
-}
-
 window.addEventListener('keyup', (e) => {
+  e.preventDefault();
   const currentKeyCode = e.code;
   const currentKeyName = e.key.toLowerCase();
   keyPressed[currentKeyCode] = false;
   for (let i = 0; i < keys.length; i += 1) {
-    const keyName = keys[i].getAttribute('keyname');
-    if (currentKeyCode === keyName || currentKeyName === keyName) {
+    const key = keys[i];
+    const keyIndex = key.getAttribute('keyIndex');
+    const keyNameEn = keyLayout.en[keyIndex];
+    const keyNameRu = keyLayout.ru[keyIndex];
+    if (currentKeyCode === keyNameEn || currentKeyName === keyNameEn
+      || currentKeyName === keyNameRu) {
       keys[i].classList.remove('keyboard__key_press');
       keys[i].classList.add('keyboard__key_up');
       if (currentKeyCode === 'ShiftLeft' || currentKeyCode === 'ShiftRight') {
         toggleShift(getLanguage());
       }
       if (currentKeyCode === 'CapsLock') {
-        toggleCapsLock(keys[i]);
+        toggleCapsLock(key);
       }
     }
-    animation(keys[i]);
+    animation(key);
   }
 });
 
