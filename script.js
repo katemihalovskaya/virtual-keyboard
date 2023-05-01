@@ -27,15 +27,15 @@ let keys;
 let textArea;
 let shift = false;
 let capsLock = false;
-const keyPressed = {};
+let keyPressed = {};
 
 function getLanguage() {
-  const lang = localStorage.getItem('language');
-  return lang || 'en';
+    let lang = localStorage.getItem('language');
+    return lang ? lang : 'en';
 }
 
 function saveLanguage(lang) {
-  localStorage.setItem('language', lang);
+    localStorage.setItem('language', lang);
 }
 
 function toggleCapsLock(key) {
@@ -63,13 +63,61 @@ function toggleShift(lang) {
 }
 
 function toggleLanguage() {
-  lang = getLanguage() === 'en' ? 'ru' : 'en';
-  for (let i = 0; i < keys.length; i += 1) {
-    if (keys[i].childElementCount === 0) {
-      keys[i].textContent = keyLayout[lang][i];
+    lang = getLanguage() === 'en' ? 'ru' : 'en';
+    for (let i = 0; i < keys.length; i += 1) {
+        if (keys[i].childElementCount === 0) {
+          keys[i].textContent = keyLayout[lang][i];
+        }
+      }
+    saveLanguage(lang);
+}
+
+function insertTab() {
+    const start = textArea.selectionStart;
+    const end = textArea.selectionEnd;
+    textArea.value = textArea.value.substring(0, start) + "\t" + textArea.value.substring(end);
+    textArea.selectionStart = textArea.selectionEnd = start + 4;
+}
+
+function navigate(key) {
+    switch(key) {
+        case 'ArrowLeft':
+            if (textArea.selectionStart > 0) {
+                textArea.selectionStart -= 1;
+                textArea.selectionEnd = textArea.selectionStart;
+            }
+            break;
+        case 'ArrowUp':
+            const lineStart = textArea.value.lastIndexOf("\n", textArea.selectionStart - 1);
+            if (lineStart >= 0) {
+                const lineEnd = textArea.value.indexOf("\n", textArea.selectionStart);
+                textArea.selectionStart = lineStart + (textArea.selectionStart - lineStart) % (lineEnd - lineStart);
+                textArea.selectionEnd = textArea.selectionStart;
+            }
+            break;
+        case 'ArrowRight':
+            if (textArea.selectionEnd < textArea.value.length) {
+                textArea.selectionEnd += 1;
+                textArea.selectionStart = textArea.selectionEnd;
+            }
+            break;
+        case 'ArrowDown':
+            const lineEnd = textArea.value.indexOf("\n", textArea.selectionEnd);
+            if (lineEnd >= 0) {
+                const lineStart = textArea.value.lastIndexOf("\n", textArea.selectionEnd - 1);
+                textArea.selectionEnd = lineStart + (textArea.selectionEnd - lineStart) % (lineEnd - lineStart);
+                textArea.selectionStart = textArea.selectionEnd;
+            }
+            break;         
     }
-  }
-  saveLanguage(lang);
+}
+
+function insertLineBreak(lang, key) {
+    if(lang === 'en') {
+        return ['Backspace', ']', 'Enter', 'ShiftRight'].indexOf(key) !== -1;
+    } else {
+        return ['Backspace', 'Enter', 'ShiftRight', 'ъ'].indexOf(key) !== -1;
+    }
 }
 
 function createKeys(lang) {
@@ -83,7 +131,6 @@ function createKeys(lang) {
 
   keyLayout[lang].forEach((key) => {
     const keyElement = document.createElement('button');
-    const insertLineBreak = ['Backspace', ']', 'Enter', 'ShiftRight'].indexOf(key) !== -1;
 
     // Add attributes/classes
     keyElement.setAttribute('type', 'button');
@@ -101,6 +148,10 @@ function createKeys(lang) {
         break;
       case 'Tab':
         keyElement.innerHTML = createIconHTML('keyboard_tab');
+        keyElement.addEventListener('click', (e) => {
+            e.preventDefault();
+            insertTab();
+          });
         break;
       case 'MetaLeft':
       case 'MetaRight':
@@ -153,18 +204,30 @@ function createKeys(lang) {
       default:
         keyElement.textContent = key.toLowerCase();
         keyElement.addEventListener('click', () => {
-          textArea.value += capsLock ? key.toUpperCase() : key.toLowerCase();
+            key = capsLock ? key.toUpperCase() : key.toLowerCase();
+            /* textArea.value = textArea.value.substring(0, textArea.selectionStart) + key + textArea.value.substring(textArea.selectionEnd); */
+            textArea.value += key;
         });
         break;
     }
 
+    keyElement.addEventListener('click', () => navigate(key));
+
+    keyElement.addEventListener('mousedown', () => {
+        keyElement.classList.add('keyboard__key_press');
+    });
+    keyElement.addEventListener('mouseup', () => {
+      keyElement.classList.remove('keyboard__key_press');
+      keyElement.classList.add('keyboard__key_up');
+      animation(keyElement);
+    });
+
     fragment.appendChild(keyElement);
 
-    if (insertLineBreak) {
+    if (insertLineBreak(getLanguage(), key)) {
       fragment.appendChild(document.createElement('br'));
     }
   });
-
   return fragment;
 }
 
@@ -188,7 +251,16 @@ function initKeyboard() {
 function initTextarea() {
   textArea = document.createElement('textarea');
   textArea.classList.add('textarea');
+  textArea.setAttribute('rows', '18');
   document.body.appendChild(textArea);
+}
+
+function initComments() {
+    let comments = document.createElement('div');
+    comments.classList.add('comments');
+    comments.innerHTML = `Клавиатура создана в операционной системе MacOS <br>
+                          Для переключения языка комбинация: левыe control(ctrl) + option(alt)`
+    document.body.appendChild(comments);
 }
 
 window.addEventListener('keydown', (e) => {
@@ -199,15 +271,35 @@ window.addEventListener('keydown', (e) => {
     const keyName = keys[i].getAttribute('keyname');
     if (currentKeyCode === keyName || currentKeyName === keyName) {
       keys[i].classList.add('keyboard__key_press');
-      if (currentKeyCode === 'ShiftLeft' || currentKeyCode === 'ShiftRight') {
-        toggleShift();
+      switch(currentKeyCode) {
+        case 'ShiftLeft':
+        case 'ShiftRight':
+            toggleShift(getLanguage());
+            break;
+        case 'CapsLock':
+            toggleCapsLock(keys[i]);
+            break;
+        case 'Enter':
+            e.preventDefault();
+            textArea.value += '\n';
+            break;
+        case 'Space':
+            e.preventDefault();
+            textArea.value += ' ';
+            break;
+        case 'Backspace':
+            e.preventDefault();
+            const { value } = textArea;
+            textArea.value = value.substring(0, value.length - 1);
+            break;
+        case 'Tab':
+            e.preventDefault();
+            insertTab();
       }
-      if (currentKeyCode === 'CapsLock') {
-        toggleCapsLock(keys[i]);
-      }
-      if (keyPressed.ControlLeft && keyPressed.AltLeft) {
+      if (keyPressed['ControlLeft'] && keyPressed['AltLeft']) {
         toggleLanguage();
       }
+      navigate(currentKeyCode);
     }
   }
 });
@@ -228,7 +320,7 @@ window.addEventListener('keyup', (e) => {
       keys[i].classList.remove('keyboard__key_press');
       keys[i].classList.add('keyboard__key_up');
       if (currentKeyCode === 'ShiftLeft' || currentKeyCode === 'ShiftRight') {
-        toggleShift();
+        toggleShift(getLanguage());
       }
       if (currentKeyCode === 'CapsLock') {
         toggleCapsLock(keys[i]);
@@ -240,6 +332,7 @@ window.addEventListener('keyup', (e) => {
 
 function init() {
   initTextarea();
+  initComments();
   initKeyboard();
 }
 
