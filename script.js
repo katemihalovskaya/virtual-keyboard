@@ -82,41 +82,6 @@ function insertTab() {
   textArea.selectionEnd = start + 4;
 }
 
-/* function navigate(key) {
-    switch(key) {
-        case 'ArrowLeft':
-            if (textArea.selectionStart > 0) {
-                textArea.selectionStart -= 1;
-                textArea.selectionEnd = textArea.selectionStart;
-            }
-            break;
-        case 'ArrowUp':
-            const lineStart = textArea.value.lastIndexOf("\n", textArea.selectionStart - 1);
-            if (lineStart >= 0) {
-                const lineEnd = textArea.value.indexOf("\n", textArea.selectionStart);
-                textArea.selectionStart = lineStart
-                  + (textArea.selectionStart - lineStart) % (lineEnd - lineStart);
-                textArea.selectionEnd = textArea.selectionStart;
-            }
-            break;
-        case 'ArrowRight':
-            if (textArea.selectionEnd < textArea.value.length) {
-                textArea.selectionEnd += 1;
-                textArea.selectionStart = textArea.selectionEnd;
-            }
-            break;
-        case 'ArrowDown':
-            const lineEnd = textArea.value.indexOf("\n", textArea.selectionEnd);
-            if (lineEnd >= 0) {
-                const lineStart = textArea.value.lastIndexOf("\n", textArea.selectionEnd - 1);
-                textArea.selectionEnd = lineStart
-                  + (textArea.selectionEnd - lineStart) % (lineEnd - lineStart);
-                textArea.selectionStart = textArea.selectionEnd;
-            }
-            break;
-    }
-} */
-
 function insertLineBreak(lang, key) {
   if (lang === 'en') {
     return ['Backspace', ']', 'Enter', 'ShiftRight'].indexOf(key) !== -1;
@@ -181,15 +146,27 @@ function createKeys(lang) {
         break;
       case 'ArrowLeft':
         keyElement.innerHTML = createIconHTML('keyboard_arrow_left');
+        keyElement.addEventListener('click', () => {
+          textArea.value += '←';
+        });
         break;
       case 'ArrowRight':
         keyElement.innerHTML = createIconHTML('keyboard_arrow_right');
+        keyElement.addEventListener('click', () => {
+          textArea.value += '→';
+        });
         break;
       case 'ArrowUp':
         keyElement.innerHTML = createIconHTML('keyboard_arrow_up');
+        keyElement.addEventListener('click', () => {
+          textArea.value += '↑';
+        });
         break;
       case 'ArrowDown':
         keyElement.innerHTML = createIconHTML('keyboard_arrow_down');
+        keyElement.addEventListener('click', () => {
+          textArea.value += '↓';
+        });
         break;
       case 'CapsLock':
         keyElement.classList.add('keyboard__key_activatable');
@@ -257,7 +234,7 @@ function initKeyboard() {
 function initTextarea() {
   textArea = document.createElement('textarea');
   textArea.classList.add('textarea');
-  textArea.setAttribute('rows', '18');
+  textArea.setAttribute('rows', '10');
   document.body.appendChild(textArea);
 }
 
@@ -301,6 +278,18 @@ window.addEventListener('keydown', (e) => {
           break;
         case 'Tab':
           insertTab();
+          break;
+        case 'ArrowLeft':
+          textArea.value += '←';
+          break;
+        case 'ArrowUp':
+          textArea.value += '↑';
+          break;
+        case 'ArrowRight':
+          textArea.value += '→';
+          break;
+        case 'ArrowDown':
+          textArea.value += '↓';
           break;
         default:
           if (key.childElementCount === 0) {
