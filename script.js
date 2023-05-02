@@ -54,10 +54,18 @@ function toggleShift(lang) {
   for (let i = 0; i < keys.length; i += 1) {
     if (shift) {
       if (keys[i].childElementCount === 0) {
-        keys[i].textContent = keyLayout.shift[lang][i].toUpperCase();
+        if (!capsLock) {
+          keys[i].textContent = keyLayout.shift[lang][i].toUpperCase();
+        } else {
+          keys[i].textContent = keyLayout.shift[lang][i].toLowerCase();
+        }
       }
     } else if (keys[i].childElementCount === 0) {
-      keys[i].textContent = keyLayout[lang][i];
+      if (!capsLock) {
+        keys[i].textContent = keyLayout[lang][i];
+      } else {
+        keys[i].textContent = keyLayout[lang][i].toUpperCase();
+      }
     }
   }
 }
@@ -67,7 +75,8 @@ function toggleLanguage() {
   for (let i = 0; i < keys.length; i += 1) {
     const key = keys[i];
     if (key.childElementCount === 0) {
-      const value = keyLayout[lang][i];
+      let value = keyLayout[lang][i];
+      value = capsLock ? value.toUpperCase() : value.toLowerCase();
       key.textContent = value;
     }
   }
